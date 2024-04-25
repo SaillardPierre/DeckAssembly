@@ -1,0 +1,53 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<RadzenStack>
+    <RadzenCard>
+        <RadzenStack AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start">
+
+        <Dropzone Items="MyItems">
+            <RadzenCard>
+                <RadzenStack Gap="0">
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-mt-2 rz-my-0">@context.Id</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">@context.Name</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </Dropzone>
+        </RadzenStack>
+
+    </RadzenCard>
+
+    <Dropzone Items="OtherItems">
+        <RadzenCard>
+            <RadzenStack Gap="0">
+                <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-mt-2 rz-my-0">@context.Id</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">@context.Name</RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </Dropzone>
+</RadzenStack>
+@code {
+    public List<Item> MyItems = new List<Item>
+    {
+        new Item(1,"Numéro 1"),
+        new Item(2,"Numéro 2"),
+        new Item(3,"Numéro 3 t'as capté")
+    };
+    public List<Item> OtherItems = new();
+    public class Item
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+
+        public Item(int id, string name)
+        {
+            Id = id;
+            Name = name;
+        }
+    }
+}
