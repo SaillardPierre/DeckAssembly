@@ -1,0 +1,121 @@
+﻿@using Microsoft.JSInterop;
+@using System.Text.RegularExpressions
+@inject IJSRuntime JS;
+
+<RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
+             class="dropzone w-100 h-50" id="wrappingDropZoneOne">
+    @{
+        int index = 0;
+        foreach (Item i in MyItems)
+        {
+            <CardItem Item=i Index=index></CardItem>
+            index++;
+        }
+    }
+</RadzenStack>
+
+<hr />
+@if (CurrentDraggedItem is not null)
+{
+    <CardItem Item=CurrentDraggedItem></CardItem>
+}
+<hr />
+@*class="dropzone w-100 h-50" *@
+<RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
+             class=" w-100 h-50"
+             id="wrappingDropZoneTwo">
+    @{
+        foreach (Item i in OtherItems)
+        {
+            <CardItem Item=i></CardItem>
+        }
+    }
+</RadzenStack>
+
+@code {
+    private DotNetObjectReference<DragAndDrop>? dotNetHelper;
+    private Item? CurrentDraggedItem { get; set; }
+    public List<Item> MyItems = new List<Item>
+    {
+    new Item(1,"Numéro 1"),
+    new Item(2,"Numéro 2"),
+    new Item(3,"Numéro 3 t'as capté")
+    };
+    public List<Item> OtherItems = new(){
+    new Item(1,"Numéro 1 bis")
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+        //Interop = new(JS);
+        //await Interop.SetupCustomEventCallback(args => HandleCustomEvent(args));
+        dotNetHelper = DotNetObjectReference.Create(this);
+        //
+        await JS.InvokeVoidAsync("dragAndDrop", ".draggable", ".dropzone", dotNetHelper);
+        await JS.InvokeVoidAsync("dropZone", ".dropzone", dotNetHelper);
+
+    }
+
+    [JSInvokable(nameof(OnDragStart))]
+    public async Task OnDragStart(int index)
+    {
+        CurrentDraggedItem = MyItems[index];
+        StateHasChanged();
+    }
+
+    [JSInvokable(nameof(OnDragEnd))]
+    public async Task OnDragEnd()
+    {
+        CurrentDraggedItem = null;
+        StateHasChanged();
+    }
+
+    // [JSInvokable(nameof(OnMove))]
+    // public async Task<string> OnMove(int x, int y, int dx, int dy)
+    // {
+    //     if (x == 0 && y == 0)
+    //     {
+    //         return string.Empty;
+    //     }
+
+    //     x += dx;
+    //     y += dy;
+
+    //     return $"translate({x}px, {y}px)";
+    //}
+
+    // Ne fonctionne pas,
+    [JSInvokable(nameof(OnMove))]
+    public Task<string> OnMove(float dx, float dy, string? initialTransform = null)
+    {
+        float x = 0;
+        float y = 0;
+
+        if (!string.IsNullOrWhiteSpace(initialTransform))
+        {
+            string pattern = @"translate\((-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\)";
+
+            Match match = Regex.Match(initialTransform, pattern);
+
+            if (match.Success)
+            {
+                x = float.Parse(match.Groups[1].Value);
+                y = float.Parse(match.Groups[2].Value);
+            }
+        }
+
+        x += dx;
+        y += dy;
+        return Task.FromResult($"translate({x}px, {y}px)");
+    }
+
+    [JSInvokable(nameof(HandleDrop))]
+    public async Task HandleDrop(Item e)
+    {
+
+    }
+}

@@ -1,6 +1,10 @@
 ﻿@page "/"
 
-<RadzenStack AlignItems="AlignItems.Stretch" JustifyContent="JustifyContent.SpaceBetween" class="w-100 h-100">
+
+<DeckAssembly.Components.DragAndDrop></DeckAssembly.Components.DragAndDrop>
+
+
+@* <RadzenStack AlignItems="AlignItems.Stretch" JustifyContent="JustifyContent.SpaceBetween" class="w-100 h-100">
     <RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" class="w-100 h-100">
         <Dropzone TItem=Item Items="MyItems" Class="w-100 h-100 rz-display-flex" @ref=Dropzone1>
             <RadzenCard Style="width: 80px; height:100px">
@@ -22,9 +26,9 @@
             </RadzenCard>
         </Dropzone>
     </RadzenStack>
-</RadzenStack>
+</RadzenStack> *@
 @code {
-    Dropzone<Item> Dropzone1 = new(); 
+    Dropzone<Item> Dropzone1 = new();
     Dropzone<Item> Dropzone2 = new();
 
     public List<Item> MyItems = new List<Item>
@@ -36,15 +40,4 @@
     public List<Item> OtherItems = new(){
     new Item(1,"Numéro 1 bis")
     };
-    public class Item
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-
-        public Item(int id, string name)
-        {
-            Id = id;
-            Name = name;
-        }
-    }
-    }
+}

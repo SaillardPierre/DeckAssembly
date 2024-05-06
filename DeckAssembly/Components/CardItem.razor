@@ -1,0 +1,18 @@
+﻿<RadzenCard Style="width: 80px; height:100px"  class="draggable" id="@CardId"
+            data-identifier="@Item.Id"
+            data-index="@Index"
+            data-display-name="@Item.Name">
+    <RadzenStack Gap="0">
+        <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-mt-2 rz-my-0">@Item.Id</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body1">@Item.Name</RadzenText>
+    </RadzenStack>
+</RadzenCard>
+@code {
+    [Parameter]
+    public Item Item { get; set; }
+
+    [Parameter]
+    public int Index{ get; set; }
+
+    private string CardId => "DraggableCard" + Item.Id;
+}

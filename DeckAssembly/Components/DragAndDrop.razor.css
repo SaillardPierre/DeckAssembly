@@ -1,0 +1,9 @@
+﻿.draggable {
+    touch-action : none;
+    user-select : none;
+}
+
+.dropzone {
+    touch-action: none;
+    user-select: none;
+}
