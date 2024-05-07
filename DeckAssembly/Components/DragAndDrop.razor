@@ -1,9 +1,10 @@
 ﻿@using Microsoft.JSInterop;
 @using System.Text.RegularExpressions
+@using System.Globalization
 @inject IJSRuntime JS;
 
-<RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
-             class="dropzone w-100 h-50" id="wrappingDropZoneOne">
+<RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Wrap="FlexWrap.NoWrap"
+    class="dropzone pickzone" id="wrappingDropZoneOne">
     @{
         int index = 0;
         foreach (Item i in MyItems)
@@ -22,7 +23,7 @@
 <hr />
 @*class="dropzone w-100 h-50" *@
 <RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
-             class=" w-100 h-50"
+             class="w-100 h-50 dropzone"
              id="wrappingDropZoneTwo">
     @{
         foreach (Item i in OtherItems)
@@ -74,37 +75,27 @@
         StateHasChanged();
     }
 
-    // [JSInvokable(nameof(OnMove))]
-    // public async Task<string> OnMove(int x, int y, int dx, int dy)
-    // {
-    //     if (x == 0 && y == 0)
-    //     {
-    //         return string.Empty;
-    //     }
-
-    //     x += dx;
-    //     y += dy;
-
-    //     return $"translate({x}px, {y}px)";
-    //}
-
-    // Ne fonctionne pas,
+    //
     [JSInvokable(nameof(OnMove))]
-    public Task<string> OnMove(float dx, float dy, string? initialTransform = null)
+    public Task<string> OnMove(float dx, float dy, string initialTransform)
     {
         float x = 0;
         float y = 0;
 
+        var test = initialTransform.Contains('\'');
+        string initialTransform2 = "translate(0px, 0px)";
+        bool test2 = initialTransform == initialTransform2;
+
         if (!string.IsNullOrWhiteSpace(initialTransform))
         {
-            string pattern = @"translate\((-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\)";
+            string pattern = @"translate\(([^,]+)px,\s*([^,]+)px\)";
 
             Match match = Regex.Match(initialTransform, pattern);
 
             if (match.Success)
             {
-                x = float.Parse(match.Groups[1].Value);
-                y = float.Parse(match.Groups[2].Value);
+                x = float.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+                y = float.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
             }
         }
 
