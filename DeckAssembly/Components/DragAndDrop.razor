@@ -61,30 +61,25 @@
 
     }
 
-    [JSInvokable(nameof(OnDragStart))]
-    public async Task OnDragStart(int index)
+    [JSInvokable(nameof(OnDragStartAsync))]
+    public async Task OnDragStartAsync(int index)
     {
         CurrentDraggedItem = MyItems[index];
         StateHasChanged();
     }
 
-    [JSInvokable(nameof(OnDragEnd))]
-    public async Task OnDragEnd()
+    [JSInvokable(nameof(OnDragEndAsync))]
+    public async Task OnDragEndAsync()
     {
         CurrentDraggedItem = null;
         StateHasChanged();
     }
 
-    //
     [JSInvokable(nameof(OnMove))]
-    public Task<string> OnMove(float dx, float dy, string initialTransform)
+    public async ValueTask<string> OnMove(float dx, float dy, string initialTransform)
     {
         float x = 0;
         float y = 0;
-
-        var test = initialTransform.Contains('\'');
-        string initialTransform2 = "translate(0px, 0px)";
-        bool test2 = initialTransform == initialTransform2;
 
         if (!string.IsNullOrWhiteSpace(initialTransform))
         {
@@ -101,7 +96,7 @@
 
         x += dx;
         y += dy;
-        return Task.FromResult($"translate({x}px, {y}px)");
+        return $"translate({x}px, {y}px)";
     }
 
     [JSInvokable(nameof(HandleDrop))]
