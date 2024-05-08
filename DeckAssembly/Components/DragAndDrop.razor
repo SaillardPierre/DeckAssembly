@@ -3,38 +3,44 @@
 @using System.Globalization
 @inject IJSRuntime JS;
 
-<RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Wrap="FlexWrap.NoWrap"
-    class="dropzone pickzone" id="wrappingDropZoneOne">
-    @{
-        int index = 0;
-        foreach (Item i in MyItems)
-        {
-            <CardItem Item=i Index=index></CardItem>
-            index++;
+<RadzenStack style="width: 100%; height: 100vh;" class="swapzone" JustifyContent="JustifyContent.Stretch">
+    <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
+                 style="width: 100%; height: 45vh;"
+                 class="dropzone pickzone" id="DropZone1">
+        @{
+            int index = 0;
+            foreach (Item i in MyItems)
+            {
+                <CardItem Item=i Index=index></CardItem>
+                index++;
+            }
         }
-    }
-</RadzenStack>
+    </RadzenRow>
 
-<hr />
-@if (CurrentDraggedItem is not null)
-{
-    <CardItem Item=CurrentDraggedItem></CardItem>
-}
-<hr />
-@*class="dropzone w-100 h-50" *@
-<RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
-             class="w-100 h-50 dropzone"
-             id="wrappingDropZoneTwo">
-    @{
-        foreach (Item i in OtherItems)
-        {
-            <CardItem Item=i></CardItem>
+    <hr />
+    <RadzenStack style="width: 100%; height: 10vh;">
+         @if (CurrentDraggedItem is not null)
+            {
+                <CardItem Item=CurrentDraggedItem></CardItem>
+            }
+    </RadzenStack>   
+    <hr />   
+    <RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
+                 class="w-100 h-50 dropzone"
+                 style="width: 100%; height: 45vh;"
+                 id="DropZone2">
+        @{
+            foreach (Item i in OtherItems)
+            {
+                <CardItem Item=i></CardItem>
+            }
         }
-    }
+    </RadzenStack>
 </RadzenStack>
 
 @code {
-    private DotNetObjectReference<DragAndDrop>? dotNetHelper;
+    private DotNetObjectReference<DragAndDrop>? blazorComponent;
+    private DotNetObjectReference<DragManager>? dragManager;
     private Item? CurrentDraggedItem { get; set; }
     public List<Item> MyItems = new List<Item>
     {
@@ -43,7 +49,7 @@
     new Item(3,"Numéro 3 t'as capté")
     };
     public List<Item> OtherItems = new(){
-    new Item(1,"Numéro 1 bis")
+    //new Item(1,"Numéro 1 bis")
     };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -52,12 +58,12 @@
         {
             return;
         }
-        //Interop = new(JS);
-        //await Interop.SetupCustomEventCallback(args => HandleCustomEvent(args));
-        dotNetHelper = DotNetObjectReference.Create(this);
+        
+        blazorComponent = DotNetObjectReference.Create(this);
+        dragManager = DotNetObjectReference.Create(new DragManager());
         //
-        await JS.InvokeVoidAsync("dragAndDrop", ".draggable", ".dropzone", dotNetHelper);
-        await JS.InvokeVoidAsync("dropZone", ".dropzone", dotNetHelper);
+        await JS.InvokeVoidAsync("dragAndDrop", ".draggable", ".swapzone", blazorComponent, dragManager);
+        await JS.InvokeVoidAsync("dropZone", ".dropzone", blazorComponent);
 
     }
 
@@ -75,32 +81,8 @@
         StateHasChanged();
     }
 
-    [JSInvokable(nameof(OnMove))]
-    public async ValueTask<string> OnMove(float dx, float dy, string initialTransform)
-    {
-        float x = 0;
-        float y = 0;
-
-        if (!string.IsNullOrWhiteSpace(initialTransform))
-        {
-            string pattern = @"translate\(([^,]+)px,\s*([^,]+)px\)";
-
-            Match match = Regex.Match(initialTransform, pattern);
-
-            if (match.Success)
-            {
-                x = float.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-                y = float.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
-            }
-        }
-
-        x += dx;
-        y += dy;
-        return $"translate({x}px, {y}px)";
-    }
-
     [JSInvokable(nameof(HandleDrop))]
-    public async Task HandleDrop(Item e)
+    public async Task HandleDrop(int index)
     {
 
     }
