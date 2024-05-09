@@ -4,53 +4,49 @@
 @inject IJSRuntime JS;
 
 <RadzenStack style="width: 100%; height: 100vh;" class="swapzone" JustifyContent="JustifyContent.Stretch" Gap="0px">
-    <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
-               style="height: 45vh;"
-               class="pickPoolDropzone w-100 rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2"
-               id="@nameof(PickPool)">
-        @{
-            int index = 0;
-            foreach (Item i in PickPool)
-            {
-                <CardItem Item=i Index=index CssClasses=cardClasses />
-                index++;
-            }
-        }
-    </RadzenRow>
+    <RadzenStack class="pickPoolDropzone w-100" style="height: 45vh;" id="@nameof(PickPool)">
+        <RadzenText Text=@PickPoolSizeLabel TextStyle="TextStyle.DisplayH1" />
+@*         <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"                   
+                   class="w-100 flex-grow-1 flex-item rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2"> *@
+            <CardItemList ItemList=PickPool CardClasses=cardClasses @ref=PickPoolCardItemList/>                 
+@*         </RadzenRow>
+ *@    </RadzenStack>
     <RadzenRow style="width: 100%; height: 10vh;">
         @if (CurrentDraggedItem is not null)
         {
             <CardItem Item=CurrentDraggedItem />
         }
     </RadzenRow>
-    <RadzenRow Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
-               style="height: 45vh;"
-               class="pickPoolDropzone w-100 rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2"
-               id="@nameof(PickHand)">
-        @{
-            int index = 0;
-            foreach (Item i in PickHand)
-            {
-                <CardItem Item=i Index=index CssClasses=cardClasses />
-                index++;
-            }
-        }
-    </RadzenRow>
+    <RadzenStack class="pickPoolDropzone w-100" style="height: 45vh;" id="@nameof(PickHand)">
+        <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
+                   class="w-100 flex-grow-1 flex-item rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2">
+            <CardItemList ItemList=PickHand CardClasses=cardClasses />
+        </RadzenRow>        
+        <RadzenText Text=@PickPoolSizeLabel TextStyle="TextStyle.DisplayH1" />
+    </RadzenStack>
+
 </RadzenStack>
 
 @code {
+    private string PickPoolSizeLabel => $"PickPoolSize : {PickPool.Count + PickHand.Count}";
+
     private DotNetObjectReference<PickPoolComponent>? blazorComponent;
     private DotNetObjectReference<DragManager>? dragManager;
     private List<string> cardClasses = new() { "pickPoolDraggable" };
 
+    private CardItemList PickPoolCardItemList;
     private Item? CurrentDraggedItem { get; set; }
 
-    public List<Item> PickPool { get; set; } = new(){
-    new Item(1,"Numéro 1"),
-    new Item(2,"Numéro 2"),
-    new Item(3,"Numéro 3 t'as capté")
-    };
+    [Parameter]
+    public int PickHandLowerThreshold { get; set; }
+    [Parameter]
+    public int? PickHandUpperThreshold { get; set; }
+
+    [Parameter]
+    public List<Item> PickPool { get; set; }
     public List<Item> PickHand { get; set; } = new();
+
+    private static string PickPoolDropzoneClassName => "pickPoolDropzone";
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -60,14 +56,15 @@
 
         blazorComponent = DotNetObjectReference.Create(this);
         dragManager = DotNetObjectReference.Create(new DragManager());
+        await JS.InvokeVoidAsync("pickPoolDraggables", ".pickPoolDraggable", "." + PickPoolDropzoneClassName, blazorComponent, dragManager);
 
-        await JS.InvokeVoidAsync("pickPoolDraggables", ".pickPoolDraggable", blazorComponent, dragManager);
-        await JS.InvokeVoidAsync("pickPoolDropzones", ".pickPoolDropzone", blazorComponent);
+        await JS.InvokeVoidAsync("pickPoolDropzones", "." + PickPoolDropzoneClassName, blazorComponent);
     }
 
     [JSInvokable(nameof(OnDragStartAsync))]
     public async Task OnDragStartAsync(PickPoolEventArgs args)
     {
+        // TODO : Ajouter les checks sur l'index
         if (args.PickPoolSource == "PickPool")
         {
             CurrentDraggedItem = PickPool[args.Index];
@@ -88,24 +85,32 @@
     }
 
     [JSInvokable(nameof(OnDrop))]
-    public async Task OnDrop(PickPoolEventArgs args)
+    public async ValueTask OnDrop(PickPoolEventArgs args)
     {
-        if (CurrentDraggedItem is null) throw new InvalidOperationException();
-
-        // TODO : Créer et Checker si les valeurs plafonds/seuils sont atteints
+        if (CurrentDraggedItem is null) return;
+        //throw new InvalidOperationException("Aucun item en cours de Drag");
 
         if (args.PickPoolSource == "PickPool")
         {
-            PickPool.Remove(CurrentDraggedItem);
-            PickHand.Add(CurrentDraggedItem);
+            if (PickPool[args.Index] != CurrentDraggedItem) throw new InvalidOperationException("PickPool ne contient pas cet item à cet index");
+            if (!PickHandUpperThreshold.HasValue
+                || PickHand.Count <= PickHandUpperThreshold)
+            {
+
+                PickPool.Remove(CurrentDraggedItem);
+                PickHand.Add(CurrentDraggedItem);
+                //PickPoolCardItemList.RefreshFromParent();
+            }
         }
         else if (args.PickPoolSource == "PickHand")
         {
+            if (PickHand[args.Index] != CurrentDraggedItem) throw new InvalidOperationException("PickHand ne contient pas cet item à cet index");
             PickHand.Remove(CurrentDraggedItem);
+            //PickPool.Insert()
             PickPool.Add(CurrentDraggedItem);
         }
         CurrentDraggedItem = null;
-        StateHasChanged();
+        //StateHasChanged();
     }
 
     public class PickPoolEventArgs
