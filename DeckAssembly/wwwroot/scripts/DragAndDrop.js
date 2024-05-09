@@ -1,35 +1,31 @@
-﻿async function dragAndDrop(className, restrictionSelector, blazorComponent, dragManager) {
+﻿function applyOnCardMove(event, dragManager) {
+    // Récupération de la position prédécente éventuelle
+    var initialTransform = event.target.style.transform || "translate(0px, 0px)";
+    const response = dragManager.invokeMethod('OnCardMove', event.dx, event.dy, initialTransform);
+    event.target.style.transform = response.result;
+}
+async function pickPoolDraggables(className, blazorComponent, dragManager) {
     interact(className).draggable({
         intertia: true,
         listeners: {
             start(event) {
                 const index = parseInt(event.target.dataset.index);
-                blazorComponent.invokeMethodAsync('OnDragStartAsync', index);
+                const args = { index : index, pickPoolSource : event.target.parentElement.id }; 
+                blazorComponent.invokeMethodAsync('OnDragStartAsync', args);
             },
-            end(event) {
-                if (!event.relatedTarget) {
-                    event.target.style.transform = '';
-                }
+            end(event) {                
+                event.target.style.transform = '';
                 blazorComponent.invokeMethodAsync('OnDragEndAsync');
             },
             move(event) {
-                // Récupération de la position prédécente éventuelle
-                var initialTransform = event.target.style.transform || "translate(0px, 0px)";
-                const response = dragManager.invokeMethod('OnCardMove', event.dx, event.dy, initialTransform);
-                event.target.style.transform = response.result;
+                applyOnCardMove(event, dragManager);
             },
-        },
-        modifiers: [            
-            //interact.modifiers.restrictRect({
-            //    restriction: restrictionSelector,
-            //    endOnly: true
-            //})
-        ]
+        }
     })
 };
 
-function dropZone(dropTarget, blazorComponent) {
-    interact(dropTarget)
+function pickPoolDropzones(className, blazorComponent) {
+    interact(className)
         .dropzone({
             ondragenter: function (event) {
                 // Appelé quand un draggable rentre dans la zone, la dropzone est bien récupérée ici                
@@ -42,26 +38,18 @@ function dropZone(dropTarget, blazorComponent) {
             },
             ondrop: function (event) {
                 console.log(event.relatedTarget.id + ' was dropped into ' + event.target.id);
-
-                //if (event.relatedTarget)
-
                 // Si on repose dans la même div que la ou on vient de le prendre,
                 // ("A la main" ou généré par la restriction)
                 if (event.relatedTarget.parentElement == event.target) {
-                    // Peut etre variabiliser ceci
-                    const shouldPutBackInPlace = false;
-                    // On enlève la transformation pour le draggable reprenne sa place                
+                    const shouldPutBackInPlace = true;
                     if (shouldPutBackInPlace) {
                         event.relatedTarget.style.transform = '';
                     }
-                    //event.stopPropagation();
-                    //return;
+                    return;
                 }
-
-                // TODO : Changer la facon dont on passe la réf à runtime .NET pour gérer le passage d'une liste à l'autre (entre autres)
-                //const item = { id: parseInt(event.relatedTarget.dataset.identifier), name: event.relatedTarget.dataset.displayName }
-                //const index = parseInt(event.relatedTarget.dataset.index);
-                //blazorComponent.invokeMethodAsync('HandleDrop', index);
+                const index = parseInt(event.relatedTarget.dataset.index);
+                const args = { index: index, pickPoolSource: event.relatedTarget.parentElement.id }; 
+                blazorComponent.invokeMethodAsync('OnDrop', args);
             }
         })
         .on('dropactivate', function (event) {

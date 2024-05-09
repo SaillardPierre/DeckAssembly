@@ -1,0 +1,76 @@
+﻿<RadzenDropZoneContainer TItem="Item" Data="data"
+                         ItemSelector="@ItemSelector"
+                         ItemRender="@OnItemRender"
+                         CanDrop="@CanDrop"
+                         Drop="@OnDrop">
+    <ChildContent>
+        <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" Wrap="FlexWrap.Wrap" Class="rz-p-12">
+            <RadzenDropZone Value="Status.Picked" Class="rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2 rz-p-4" Style="flex: 1; gap: 1rem;">
+                <RadzenText Text="PickPool" TextStyle="TextStyle.Subtitle1" />
+            </RadzenDropZone>
+            <hr />
+            <RadzenDropZone Value="Status.Left" Class="rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2 rz-p-4" Style="flex: 1; gap: 1rem;">
+                <RadzenText Text="PickHand" TextStyle="TextStyle.Subtitle1" />
+            </RadzenDropZone>            
+        </RadzenStack>
+    </ChildContent>
+    <Template>
+       <CardItem Item="context" Index=0>
+       </CardItem>
+    </Template>
+</RadzenDropZoneContainer>
+
+@* <style>
+    .rz-can-drop {
+        background-color: var(--rz-info-lighter);
+    }
+
+    .rz-no-drop {
+        background-color: var(--rz-danger-lighter);
+    }
+</style> *@
+
+@code {
+    // Filter items by zone value
+    Func<Item, RadzenDropZone<Item>, bool> ItemSelector = (item, zone)
+        => item.Status == (Status)zone.Value;
+
+    private int PickPoolValue = 5;
+    private int PickSizeValue = 3;
+
+    Func<RadzenDropZoneItemEventArgs<Item>, bool> CanDrop = request =>
+    {
+        return true;
+    };
+
+    void OnItemRender(RadzenDropZoneItemRenderEventArgs<Item> args)
+    {
+    }
+
+    void OnDrop(RadzenDropZoneItemEventArgs<Item> args)
+    {
+        if (args.FromZone != args.ToZone)
+        {           
+            args.Item.Status = (Status)args.ToZone.Value;
+        }
+
+        if (args.ToItem != null && args.ToItem != args.Item)
+        {
+            // reorder items in same zone or place the item at specific index in new zone
+            data.Remove(args.Item);
+            data.Insert(data.IndexOf(args.ToItem), args.Item);
+        }
+    }
+
+    IList<Item> data = new List<Item>();
+
+    protected override void OnInitialized()
+    {
+        data = Enumerable.Range(0, 5)
+              .Select(i =>
+                  new Item(i, $"{i}eme Obj"))
+                  .ToList();
+    }
+   
+   
+}

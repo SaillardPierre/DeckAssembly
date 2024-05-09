@@ -1,43 +1,6 @@
 ﻿@page "/"
 
+<DeckAssembly.Components.PickPoolComponent></DeckAssembly.Components.PickPoolComponent>
 
-<DeckAssembly.Components.DragAndDrop></DeckAssembly.Components.DragAndDrop>
-
-
-@* <RadzenStack AlignItems="AlignItems.Stretch" JustifyContent="JustifyContent.SpaceBetween" class="w-100 h-100">
-    <RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" class="w-100 h-100">
-        <Dropzone TItem=Item Items="MyItems" Class="w-100 h-100 rz-display-flex" @ref=Dropzone1>
-            <RadzenCard Style="width: 80px; height:100px">
-                <RadzenStack Gap="0">
-                    <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-mt-2 rz-my-0">@context.Id</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1">@context.Name</RadzenText>
-                </RadzenStack>
-            </RadzenCard>
-        </Dropzone>
-    </RadzenStack>
-    <hr />
-    <RadzenStack Orientation=Orientation.Horizontal AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" class="w-100 h-100">
-        <Dropzone TItem=Item Items="OtherItems" Class="w-100 h-100 rz-display-flex" @ref=Dropzone2>
-            <RadzenCard Style="width: 80px; height:100px">
-                <RadzenStack Gap="0">
-                    <RadzenText TextStyle="TextStyle.Overline" class="rz-display-flex rz-mt-2 rz-my-0">@context.Id</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1">@context.Name</RadzenText>
-                </RadzenStack>
-            </RadzenCard>
-        </Dropzone>
-    </RadzenStack>
-</RadzenStack> *@
-@code {
-    Dropzone<Item> Dropzone1 = new();
-    Dropzone<Item> Dropzone2 = new();
-
-    public List<Item> MyItems = new List<Item>
-    {
-    new Item(1,"Numéro 1"),
-    new Item(2,"Numéro 2"),
-    new Item(3,"Numéro 3 t'as capté")
-    };
-    public List<Item> OtherItems = new(){
-    new Item(1,"Numéro 1 bis")
-    };
+@code {    
 }
