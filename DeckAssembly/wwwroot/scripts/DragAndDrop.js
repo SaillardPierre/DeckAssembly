@@ -1,28 +1,52 @@
-﻿function getUpperTopCoordinates(parentElement, className) {
+﻿function getUpperTopCoordinatesForList(parentElement, className) {
     var elements = parentElement.getElementsByClassName(className);
     var coordinatesList = [];
 
     for (var i = 0; i < elements.length; i++) {
-        var rect = elements[i].getBoundingClientRect();
-        var x = rect.left + window.pageXOffset;
-        var y = rect.top + window.pageYOffset;
-        coordinatesList.push({ x: x, y: y });
+        coordinatesList.push(getUpperTopCoordinates(elements[i]));
     }
 
     return coordinatesList;
 }
 
-function applyOnCardMove(event, dragManager) {
+function getUpperTopCoordinates(element) {
+    var rect = element.getBoundingClientRect();
+    var x = rect.left + window.pageXOffset;
+    var y = rect.top + window.pageYOffset;
+    return { x: x, y: y };
+}
+
+function applyOnCardMove(event, dropzoneClassName, dragManager, blazorComponent) {
+    var draggable = event.target;
+    var sourceDropzone = event.target.closest(dropzoneClassName);
+    var dropzone = document.querySelector('.drop-available');
+    if (dropzone) {
+        // TODO : Extraire tout ce qu'on fait quand en hovering dans une autre méthode
+        const coordinatesList = getUpperTopCoordinatesForList(dropzone, 'pickPoolDraggable')
+        const index = draggable.dataset.index;
+        var selfCoordinates;
+        var dragEnterSource = 1 // DragEnterSource.Target
+        if (sourceDropzone == dropzone) {
+            dragEnterSource = 0;// DragEnterSource.Self
+            selfCoordinates = coordinatesList.splice(index, 1)[0];
+        }
+        else {
+            selfCoordinates = getUpperTopCoordinates(draggable)
+        }
+        const args = {
+            index: index,
+            dragEnterSource: dragEnterSource,
+            selfCoordinates: selfCoordinates,
+            coordinates: coordinatesList
+        };
+        blazorComponent.invokeMethod('GetFutureDropIndex', args);
+    }
     // Récupération de la position prédécente éventuelle
     var initialTransform = event.target.style.transform || "translate(0px, 0px)";
-    const response = dragManager.invokeMethod('OnCardMove', event.dx, event.dy, initialTransform);    
+    const response = dragManager.invokeMethod('OnCardMove', event.dx, event.dy, initialTransform);
     event.target.style.transform = response.result;
 }
 async function pickPoolDraggables(className, dropzoneClassName, blazorComponent, dragManager) {
-    //var drags = document.querySelectorAll(className);
-    //drags.forEach(function (div) {
-    //    div.style.position = 'absolute';
-    //});        
     interact(className).draggable({
         intertia: true,
         listeners: {
@@ -34,7 +58,7 @@ async function pickPoolDraggables(className, dropzoneClassName, blazorComponent,
                 blazorComponent.invokeMethodAsync('OnDragStartAsync', args);
             },
             end(event) {
-                console.log('Drag end for '+ event.target.id);
+                console.log('Drag end for ' + event.target.id);
 
                 var willBePutBackInPlace = false;
                 // Changer ici le comportement par défaut
@@ -51,14 +75,14 @@ async function pickPoolDraggables(className, dropzoneClassName, blazorComponent,
                 }
                 document.querySelectorAll(className).forEach(function (div) {
                     div.style.transform = '';
-                });  
+                });
                 //if (willBePutBackInPlace) {
                 //    event.target.style.transform = '';
                 //}
                 blazorComponent.invokeMethod('OnDragEndAsync');
             },
             move(event) {
-                applyOnCardMove(event, dragManager);
+                applyOnCardMove(event, dropzoneClassName, dragManager, blazorComponent);
             },
         }
     })
@@ -67,39 +91,34 @@ async function pickPoolDraggables(className, dropzoneClassName, blazorComponent,
 function pickPoolDropzones(className, blazorComponent) {
     interact(className)
         .dropzone({
+            ondragleave: function (event) {
+                var dropzone = event.target;
+                var draggable = event.relatedTarget;
+                var sourceDropzone = event.relatedTarget.closest(className);
+                //console.log(draggable.id + ' was moved out of ' + dropzone.id);
+                event.target.classList.remove('drop-available');
+            },
             ondragenter: function (event) {
-                // Appelé quand un draggable rentre dans la zone, la dropzone est bien récupérée ici                
-                var draggableElement = event.relatedTarget
-                var dropzoneElement = event.target
-                var coordinatesList = getUpperTopCoordinates(dropzoneElement, 'pickPoolDraggable')
-                console.log(coordinatesList);
-                console.log(draggableElement.id + ' was moved into ' + dropzoneElement.id);
+                var dropzone = event.target;
+                var draggable = event.relatedTarget;
+                var sourceDropzone = event.relatedTarget.closest(className);
+                //console.log(draggable.id + ' was moved into ' + dropzone.id + ' from ' + sourceDropzone.id);
+
+                // Ajout d'une classe récupérée plus tard pour savoir si on hover
+                event.target.classList.add('drop-available');
             },
             ondrop: function (event) {
-                console.log(event.relatedTarget.id + ' was dropped into ' + event.target.id);
-                // Si on repose dans la même div que la ou on vient de le prendre,
-                // ("A la main" ou généré par la restriction)
-                var test = event.dragEvent
-                const sourceDropzone = event.relatedTarget.closest(className)
-                
-                //const isDroppedInSourceDropzone = sourceDropzone == event.target
-                //if (isDroppedInSourceDropzone) return;
+                const dropzone = event.target;
+                const draggable = event.relatedTarget;
+                const sourceDropzone = draggable.closest(className);            
+                //console.log(draggable.id + ' was dropped into ' + dropzone.id + ' from ' + sourceDropzone.id);
 
-                const isEndedInSourceDropzone = sourceDropzone == event.target
-                if (!isEndedInSourceDropzone) {
-                    event.relatedTarget.style.transform = '';
+                var dropEventSource = 1 // DropEventSource.Target
+                if (sourceDropzone == dropzone) {
+                    dropEventSource = 0;// DropEventSource.Self
                 }
-                else return;
-
-                const index = parseInt(event.relatedTarget.dataset.index);
-                const args = { index: index, pickPoolSource: sourceDropzone.id };
-                //blazorComponent.invokeMethodAsync('OnDrop', args);
-
+                const args = { dropEventSource: dropEventSource, destination: dropzone.id };
                 blazorComponent.invokeMethod('OnDrop', args);
-
             }
-        })
-        .on('dropactivate', function (event) {
-            //event.target.classList.add('drop-activated');
         })
 };

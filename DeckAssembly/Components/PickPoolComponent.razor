@@ -4,24 +4,26 @@
 @inject IJSRuntime JS;
 
 <RadzenStack style="width: 100%; height: 100vh;" class="swapzone" JustifyContent="JustifyContent.Stretch" Gap="0px">
-    <RadzenStack class="pickPoolDropzone w-100" style="height: 45vh;" id="@nameof(PickPool)">
+    <RadzenStack class="pickPoolDropzone w-100" style="height: 45vh;" id="@Dropzone.PickPool">
         <RadzenText Text=@PickPoolSizeLabel TextStyle="TextStyle.DisplayH1" />
-@*         <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"                   
-                   class="w-100 flex-grow-1 flex-item rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2"> *@
-            <CardItemList ItemList=PickPool CardClasses=cardClasses @ref=PickPoolCardItemList/>                 
-@*         </RadzenRow>
- *@    </RadzenStack>
+        @*         <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
+        class="w-100 flex-grow-1 flex-item rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2"> *@
+        <CardItemList ItemList=PickPool CardClasses=cardClasses @ref=PickPoolCardItemList />
+        @*         </RadzenRow>
+        *@
+    </RadzenStack>
     <RadzenRow style="width: 100%; height: 10vh;">
+        <RadzenText Text=@FutureDropIndex.ToString() TextStyle="TextStyle.DisplayH1" />
         @if (CurrentDraggedItem is not null)
         {
             <CardItem Item=CurrentDraggedItem />
         }
     </RadzenRow>
-    <RadzenStack class="pickPoolDropzone w-100" style="height: 45vh;" id="@nameof(PickHand)">
+    <RadzenStack class="pickPoolDropzone w-100" style="height: 45vh;" id="@Dropzone.PickHand">
         <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center"
                    class="w-100 flex-grow-1 flex-item rz-display-flex rz-flex-row rz-border-base-300 rz-border-radius-2">
             <CardItemList ItemList=PickHand CardClasses=cardClasses />
-        </RadzenRow>        
+        </RadzenRow>
         <RadzenText Text=@PickPoolSizeLabel TextStyle="TextStyle.DisplayH1" />
     </RadzenStack>
 
@@ -36,6 +38,8 @@
 
     private CardItemList PickPoolCardItemList;
     private Item? CurrentDraggedItem { get; set; }
+    private int? FutureDropIndex { get; set; }
+
 
     [Parameter]
     public int PickHandLowerThreshold { get; set; }
@@ -81,41 +85,95 @@
     public async Task OnDragEndAsync()
     {
         CurrentDraggedItem = null;
+
         StateHasChanged();
     }
 
     [JSInvokable(nameof(OnDrop))]
-    public async ValueTask OnDrop(PickPoolEventArgs args)
+    public async ValueTask OnDrop(DropEventArgs args)
     {
         if (CurrentDraggedItem is null) return;
-        //throw new InvalidOperationException("Aucun item en cours de Drag");
 
-        if (args.PickPoolSource == "PickPool")
+        if (args.DropEventSource == DropEventSource.Self)
         {
-            if (PickPool[args.Index] != CurrentDraggedItem) throw new InvalidOperationException("PickPool ne contient pas cet item à cet index");
-            if (!PickHandUpperThreshold.HasValue
-                || PickHand.Count <= PickHandUpperThreshold)
+            if (args.Destination == Dropzone.PickHand)
             {
+                PickHand.PutBackAtIndex(CurrentDraggedItem, FutureDropIndex);
+            }
+            else if (args.Destination == Dropzone.PickPool)
+            {
+                PickPool.PutBackAtIndex(CurrentDraggedItem, FutureDropIndex);
+            }
 
+        }
+        else if (args.DropEventSource == DropEventSource.Target)
+        {
+            if (args.Destination == Dropzone.PickPool)
+            {
+                PickHand.Remove(CurrentDraggedItem);
+                PickPool.InsertOrAppend(CurrentDraggedItem, FutureDropIndex);
+            }
+            else if (args.Destination == Dropzone.PickHand)
+            {
                 PickPool.Remove(CurrentDraggedItem);
-                PickHand.Add(CurrentDraggedItem);
-                //PickPoolCardItemList.RefreshFromParent();
+                PickHand.InsertOrAppend(CurrentDraggedItem, FutureDropIndex);
             }
         }
-        else if (args.PickPoolSource == "PickHand")
-        {
-            if (PickHand[args.Index] != CurrentDraggedItem) throw new InvalidOperationException("PickHand ne contient pas cet item à cet index");
-            PickHand.Remove(CurrentDraggedItem);
-            //PickPool.Insert()
-            PickPool.Add(CurrentDraggedItem);
-        }
-        CurrentDraggedItem = null;
-        //StateHasChanged();
+    }
+
+
+
+
+
+    [JSInvokable(nameof(GetFutureDropIndex))]
+    public async ValueTask GetFutureDropIndex(DragEnterEventArgs args)
+    {
+        if (CurrentDraggedItem is null) throw new InvalidOperationException("CurrentDraggedItem est null dans GetFutureDropIdnex");
+        FutureDropIndex = DragManager.GetFutureIndex(args.SelfCoordinates, args.Coordinates);
+        StateHasChanged();
+    }
+
+    public static class Dropzone
+    {
+        public const string PickPool = nameof(PickPool);
+        public const string PickHand = nameof(PickHand);
+    }
+
+    public enum DropEventSource
+    {
+        Self,
+        Target,
+        Outside
+    }
+    public class DropEventArgs
+    {
+        public DropEventSource DropEventSource { get; set; }
+        public string Destination { get; set; }
+    }
+
+    public class DragEnterEventArgs
+    {
+        public DragEnterSource DragEnterSource { get; set; }
+        public int PickIndex { get; set; }
+        public UpperTopCoordinate SelfCoordinates { get; set; }
+        public IEnumerable<UpperTopCoordinate> Coordinates { get; set; }
+    }
+
+    public enum DragEnterSource
+    {
+        Self,
+        Target
     }
 
     public class PickPoolEventArgs
     {
         public int Index { get; set; }
         public string PickPoolSource { get; set; }
+    }
+
+    public class UpperTopCoordinate
+    {
+        public float x { get; set; }
+        public float y { get; set; }
     }
 }

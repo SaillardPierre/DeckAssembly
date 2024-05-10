@@ -1,6 +1,7 @@
 ﻿using Microsoft.JSInterop;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using static DeckAssembly.Components.PickPoolComponent;
 
 namespace DeckAssembly;
 
@@ -30,4 +31,17 @@ public class DragManager
 
         return $"translate({x}px, {y}px)";
     }
+
+    public static int GetFutureIndex(UpperTopCoordinate selfCoordinates, IEnumerable<UpperTopCoordinate> coordinates)
+        {
+            // Si le pointeur a des coordonnées superieures en x ou y, on est + vers la droite
+            int index = 0;
+            foreach (UpperTopCoordinate coord in coordinates)
+            {
+                if (coord.x < selfCoordinates.x) index++;
+            }
+            return index;
+        }
+
+   
 }
