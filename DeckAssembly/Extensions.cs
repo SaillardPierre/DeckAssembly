@@ -16,5 +16,17 @@
             values.Remove(item);
             values.InsertOrAppend(item, targetIndex);
         }
+
+        public static T RemoveAtAndReturn<T>(this IList<T> list, int index)
+        {
+            if (index < 0 || index >= list.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            T item = list[index];
+            list.RemoveAt(index);
+            return item;
+        }
     }
 }

@@ -1,17 +1,21 @@
-﻿<div class="container w-100 h-100 rz-border-base-300 rz-border-radius-2" style="display: grid;
-  grid-template-columns:repeat(auto-fit, minmax(100px, 1fr)); grid-auto-rows: 100%;">
-    @{        
-        // TODO : Faire un foreach avec le calcul de la taille / le nombre de cartes pour un affichage seuelement au début
-        // Trouver une facon de faire un affichage "pixel brut" en position absolue et appliquer nos transform apres sur cette base
-        // Au drop dans le composant, on fera un refresh pour retrier toutes les cartes et bien les remontrer
-        // Idéalement on fait la meme chose pour le composant dans lequel on vient de pick pour "resserer les cartes"
-        int index = 0;
-        foreach (Item i in ItemList)
-        {
-            <CardItem Item=i Index=index CssClasses=CardClasses />
-            index++;
+﻿<div class="container w-100 h-100 rz-border-base-300 rz-border-radius-2" style="display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;">
+    <div style="display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;">
+        @{
+            int index = 0;
+            foreach (Item i in ItemList)
+            {
+                <CardItem Item=i Index=index CssClasses=CardClasses />
+                index++;
+            }
         }
-    }
+    </div>
 </div>
 
 @code {

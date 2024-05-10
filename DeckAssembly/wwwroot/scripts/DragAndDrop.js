@@ -21,22 +21,20 @@ function applyOnCardMove(event, dropzoneClassName, dragManager, blazorComponent)
     var sourceDropzone = event.target.closest(dropzoneClassName);
     var dropzone = document.querySelector('.drop-available');
     if (dropzone) {
+        console.log(dropzone.id);
         // TODO : Extraire tout ce qu'on fait quand en hovering dans une autre méthode
-        const coordinatesList = getUpperTopCoordinatesForList(dropzone, 'pickPoolDraggable')
-        const index = draggable.dataset.index;
-        var selfCoordinates;
+        var coordinatesList = getUpperTopCoordinatesForList(dropzone, 'pickPoolDraggable')
+        var index = parseInt(draggable.dataset.index);
         var dragEnterSource = 1 // DragEnterSource.Target
         if (sourceDropzone == dropzone) {
             dragEnterSource = 0;// DragEnterSource.Self
-            selfCoordinates = coordinatesList.splice(index, 1)[0];
         }
         else {
-            selfCoordinates = getUpperTopCoordinates(draggable)
+            coordinatesList.push(getUpperTopCoordinates(draggable));
         }
         const args = {
             index: index,
             dragEnterSource: dragEnterSource,
-            selfCoordinates: selfCoordinates,
             coordinates: coordinatesList
         };
         blazorComponent.invokeMethod('GetFutureDropIndex', args);
@@ -51,14 +49,18 @@ async function pickPoolDraggables(className, dropzoneClassName, blazorComponent,
         intertia: true,
         listeners: {
             start(event) {
-                //event.target.style.left = event.clientX;
-                //event.target.style.top = event.clientY;
                 const index = parseInt(event.target.dataset.index);
                 const args = { index: index, pickPoolSource: event.target.closest(dropzoneClassName).id };
                 blazorComponent.invokeMethodAsync('OnDragStartAsync', args);
             },
             end(event) {
                 console.log('Drag end for ' + event.target.id);
+
+                var draggable = event.target;
+                var sourceDropzone = event.target.closest(dropzoneClassName);
+                var dropzone = document.querySelector('.drop-available');
+
+                // TODO : Tout le mic mac pour la gestion de la remise en place va finir par se faire ici
 
                 var willBePutBackInPlace = false;
                 // Changer ici le comportement par défaut
@@ -73,12 +75,14 @@ async function pickPoolDraggables(className, dropzoneClassName, blazorComponent,
                         willBePutBackInPlace = shouldPutBackInPlaceIfInSource;
                     }
                 }
+                
+                if (willBePutBackInPlace) {
+                    event.target.style.transform = '';
+                    
+                }
                 document.querySelectorAll(className).forEach(function (div) {
                     div.style.transform = '';
                 });
-                //if (willBePutBackInPlace) {
-                //    event.target.style.transform = '';
-                //}
                 blazorComponent.invokeMethod('OnDragEndAsync');
             },
             move(event) {
@@ -104,6 +108,7 @@ function pickPoolDropzones(className, blazorComponent) {
                 var sourceDropzone = event.relatedTarget.closest(className);
                 //console.log(draggable.id + ' was moved into ' + dropzone.id + ' from ' + sourceDropzone.id);
 
+                sourceDropzone.classList.remove('drop-available');
                 // Ajout d'une classe récupérée plus tard pour savoir si on hover
                 event.target.classList.add('drop-available');
             },
